@@ -1,0 +1,927 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>SkillTrust Academy – ตรวจสอบใบรับรองดิจิทัล</title>
+    <meta
+      name="description"
+      content="ตรวจสอบและออกใบรับรองดิจิทัลด้วย Ethereum Smart Contract เก็บเฉพาะ Hash ไม่เปิดเผยข้อมูลส่วนบุคคล"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@600;700&family=Sarabun:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+      :root {
+        --bg: #eef1f6;
+        --surface: #fff;
+        --ink: #14213d;
+        --muted: #5b6678;
+        --line: #d5dbe6;
+        --brand: #14213d;
+        --brand-ink: #fff;
+        --ok: #0d7a4f;
+        --ok-bg: #dff4e9;
+        --bad: #b3261e;
+        --bad-bg: #fbe3e1;
+        --warn: #8a5a00;
+        --warn-bg: #fdf0d0;
+        --seal: #c8962e;
+        box-sizing: border-box;
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          color-scheme: dark;
+          --bg: #0d1424;
+          --surface: #16203a;
+          --ink: #e8edf7;
+          --muted: #9aa6bd;
+          --line: #2a3757;
+          --brand: #e8edf7;
+          --brand-ink: #0d1424;
+          --ok: #5fd6a0;
+          --ok-bg: #12382a;
+          --bad: #ff9189;
+          --bad-bg: #431c1a;
+          --warn: #f0c564;
+          --warn-bg: #3d2f0c;
+        }
+      }
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --bg: #0d1424;
+        --surface: #16203a;
+        --ink: #e8edf7;
+        --muted: #9aa6bd;
+        --line: #2a3757;
+        --brand: #e8edf7;
+        --brand-ink: #0d1424;
+        --ok: #5fd6a0;
+        --ok-bg: #12382a;
+        --bad: #ff9189;
+        --bad-bg: #431c1a;
+        --warn: #f0c564;
+        --warn-bg: #3d2f0c;
+      }
+      html {
+        scroll-padding-top: env(safe-area-inset-top, 0px);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          16px/1.6 Sarabun,
+          "Noto Sans Thai",
+          system-ui,
+          sans-serif;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: "Noto Serif Thai", Georgia, serif;
+        line-height: 1.3;
+        margin: 0;
+      }
+      .wrap {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 20px 16px 56px;
+      }
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+      }
+      .brand {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      .seal {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: 3px double var(--seal);
+        display: grid;
+        place-items: center;
+        color: var(--seal);
+        font-family: "Noto Serif Thai", serif;
+        font-weight: 700;
+        font-size: 18px;
+      }
+      .brand h1 {
+        font-size: 20px;
+      }
+      .brand small {
+        color: var(--muted);
+      }
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+        color: inherit;
+      }
+      .btn {
+        background: var(--brand);
+        color: var(--brand-ink);
+        border: 0;
+        border-radius: 8px;
+        padding: 9px 16px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .btn.ghost {
+        background: transparent;
+        color: var(--ink);
+        border: 1px solid var(--line);
+      }
+      .btn.danger {
+        background: var(--bad);
+        color: #fff;
+      }
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: wait;
+      }
+      :focus-visible {
+        outline: 3px solid var(--seal);
+        outline-offset: 2px;
+      }
+      .cfg {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 14px;
+        display: grid;
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .row > * {
+        flex: 1 1 200px;
+      }
+      label {
+        display: grid;
+        gap: 4px;
+        font-weight: 500;
+        font-size: 14px;
+        color: var(--muted);
+      }
+      input,
+      select,
+      textarea {
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 9px 11px;
+        width: 100%;
+        color: var(--ink);
+      }
+      textarea {
+        min-height: 92px;
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 13px;
+      }
+      nav {
+        display: flex;
+        gap: 4px;
+        overflow-x: auto;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 18px;
+      }
+      nav button {
+        background: none;
+        border: 0;
+        border-bottom: 3px solid transparent;
+        padding: 10px 14px;
+        cursor: pointer;
+        color: var(--muted);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      nav button[aria-selected="true"] {
+        color: var(--ink);
+        border-color: var(--seal);
+      }
+      section.panel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 20px;
+        display: none;
+        gap: 14px;
+      }
+      section.panel.on {
+        display: grid;
+      }
+      .hint {
+        color: var(--muted);
+        font-size: 14px;
+        margin: 0;
+      }
+      .result {
+        border-radius: 10px;
+        padding: 16px;
+        border: 1px solid var(--line);
+        display: none;
+      }
+      .result.show {
+        display: block;
+      }
+      .result.ok {
+        background: var(--ok-bg);
+        border-color: var(--ok);
+      }
+      .result.bad {
+        background: var(--bad-bg);
+        border-color: var(--bad);
+      }
+      .result.warn {
+        background: var(--warn-bg);
+        border-color: var(--warn);
+      }
+      .result h3 {
+        font-size: 19px;
+        margin-bottom: 6px;
+      }
+      .result.ok h3 {
+        color: var(--ok);
+      }
+      .result.bad h3 {
+        color: var(--bad);
+      }
+      .result.warn h3 {
+        color: var(--warn);
+      }
+      dl {
+        display: grid;
+        grid-template-columns: max-content 1fr;
+        gap: 4px 14px;
+        margin: 8px 0 0;
+      }
+      dt {
+        color: var(--muted);
+      }
+      dd {
+        margin: 0;
+        word-break: break-all;
+      }
+      .cert {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 12px 14px;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .tag {
+        font-size: 13px;
+        font-weight: 600;
+        padding: 2px 10px;
+        border-radius: 99px;
+      }
+      .tag.ok {
+        background: var(--ok-bg);
+        color: var(--ok);
+      }
+      .tag.bad {
+        background: var(--bad-bg);
+        color: var(--bad);
+      }
+      #qr {
+        background: #fff;
+        padding: 10px;
+        border-radius: 8px;
+        width: fit-content;
+      }
+      #toast {
+        position: fixed;
+        left: 50%;
+        bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+        transform: translateX(-50%);
+        background: var(--brand);
+        color: var(--brand-ink);
+        padding: 10px 18px;
+        border-radius: 99px;
+        display: none;
+        max-width: 92vw;
+        z-index: 20;
+      }
+      .wide {
+        overflow-x: auto;
+      }
+      .chip {
+        font-size: 13px;
+        font-weight: 600;
+        padding: 3px 11px;
+        border-radius: 99px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--muted);
+        align-self: center;
+        flex: 0 0 auto;
+        white-space: nowrap;
+      }
+      .chip.on {
+        color: var(--ok);
+        border-color: var(--ok);
+        background: var(--ok-bg);
+      }
+      .chip.off {
+        color: var(--warn);
+        border-color: var(--warn);
+        background: var(--warn-bg);
+      }
+      pre.src {
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 12px;
+        margin: 0;
+        max-height: 300px;
+        overflow: auto;
+        font:
+          12px/1.5 ui-monospace,
+          Menlo,
+          monospace;
+        white-space: pre;
+      }
+      .steps {
+        margin: 0;
+        padding-left: 20px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      a {
+        color: var(--ink);
+        text-underline-offset: 3px;
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        .result.show {
+          animation: pop 0.25s ease-out;
+        }
+        @keyframes pop {
+          from {
+            transform: scale(0.98);
+            opacity: 0.4;
+          }
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="brand">
+          <div class="seal" aria-hidden="true">ST</div>
+          <div>
+            <h1>SkillTrust Academy</h1>
+            <small>ระบบตรวจสอบใบรับรองดิจิทัลบน Ethereum</small>
+          </div>
+        </div>
+        <div class="row" style="flex: 0 0 auto">
+          <span id="chain" class="chip">ยังไม่เชื่อมต่อ</span
+          ><span id="role" class="chip" hidden></span
+          ><span
+            id="acct"
+            class="hint"
+            style="align-self: center; flex: 0 1 auto"
+          ></span>
+          <button class="btn" id="btnConnect">เชื่อมต่อ Wallet</button>
+        </div>
+      </header>
+
+      <p class="hint" id="addrHint"></p>
+
+      <nav role="tablist" id="tabs">
+        <button role="tab" data-t="verify" aria-selected="true">
+          ตรวจสอบใบรับรอง
+        </button>
+        <button role="tab" data-t="mine" aria-selected="false">
+          ใบรับรองของฉัน
+        </button>
+        <button role="tab" data-t="issue" aria-selected="false">
+          ออกใบรับรอง
+        </button>
+        <button role="tab" data-t="admin" aria-selected="false">
+          ผู้ดูแลระบบ
+        </button>
+      </nav>
+
+      <!-- ตรวจสอบ -->
+      <section class="panel on" id="p-verify">
+        <h2>ตรวจสอบใบรับรอง</h2>
+        <label
+          >รหัสอ้างอิงใบรับรอง<input
+            id="vRef"
+            placeholder="เช่น STA-2026-0001"
+            autocomplete="off"
+        /></label>
+        <label
+          >ข้อมูลใบรับรอง (JSON) – ไม่บังคับ
+          ใช้ยืนยันว่าเอกสารไม่ถูกแก้ไข<textarea
+            id="vPayload"
+            placeholder="วางข้อมูลที่ได้รับพร้อมใบรับรอง"
+          ></textarea>
+        </label>
+        <div><button class="btn" id="btnVerify">ตรวจสอบ</button></div>
+        <div class="result" id="vResult" aria-live="polite"></div>
+      </section>
+
+      <!-- ของฉัน -->
+      <section class="panel" id="p-mine">
+        <h2>ใบรับรองที่ผูกกับ Wallet ของฉัน</h2>
+        <p class="hint">เชื่อมต่อ Wallet แล้วกดโหลดรายการ</p>
+        <div><button class="btn" id="btnMine">โหลดรายการ</button></div>
+        <div id="mineList" style="display: grid; gap: 10px"></div>
+      </section>
+
+      <!-- ออก -->
+      <section class="panel" id="p-issue">
+        <h2>ออกใบรับรอง</h2>
+        <p class="hint">
+          เฉพาะผู้ได้รับสิทธิ์ออกใบรับรอง ชื่อผู้รับจะไม่ถูกส่งขึ้นเชน
+          ระบบบันทึกเฉพาะ Hash
+        </p>
+        <div class="row">
+          <label
+            >รหัสอ้างอิง (ห้ามซ้ำ)<input id="iRef" placeholder="STA-2026-0001"
+          /></label>
+          <label
+            >รหัสหลักสูตร<select id="iCourse">
+              <option value="">– กดโหลดหลักสูตร –</option>
+            </select></label
+          >
+        </div>
+        <div class="row">
+          <label>ชื่อ-นามสกุลผู้รับ (เก็บนอกเชน)<input id="iName" /></label>
+          <label
+            >Wallet ผู้รับ<input
+              id="iHolder"
+              placeholder="0x..."
+              spellcheck="false"
+          /></label>
+        </div>
+        <div class="row">
+          <button class="btn ghost" id="btnLoadCourses">โหลดหลักสูตร</button
+          ><button class="btn" id="btnIssue">ออกใบรับรอง</button>
+        </div>
+        <div class="result" id="iResult"></div>
+        <div id="iOut" style="display: none; gap: 10px">
+          <label
+            >ข้อมูลใบรับรอง (ส่งให้ผู้รับเก็บไว้ ใช้ตรวจสอบภายหลัง)<textarea
+              id="iPayload"
+              readonly
+            ></textarea>
+          </label>
+          <div id="qr"></div>
+          <p class="hint" id="qrNote"></p>
+        </div>
+      </section>
+
+      <!-- แอดมิน -->
+      <section class="panel" id="p-admin">
+        <h2>สร้างหลักสูตร</h2>
+        <div class="row">
+          <label>รหัสหลักสูตร<input id="cCode" placeholder="CYBER-101" /></label
+          ><label
+            >ชื่อหลักสูตร<input
+              id="cName"
+              placeholder="Cybersecurity Fundamentals"
+          /></label>
+        </div>
+        <label
+          >รายละเอียด<input id="cDetails" placeholder="ชั่วโมงอบรม หัวข้อ ฯลฯ"
+        /></label>
+        <div><button class="btn" id="btnCourse">สร้างหลักสูตร</button></div>
+        <hr style="border: 0; border-top: 1px solid var(--line); width: 100%" />
+        <h2>กำหนดสิทธิ์ผู้ออกใบรับรอง</h2>
+        <div class="row">
+          <label
+            >Wallet ผู้ออก<input
+              id="sAddr"
+              placeholder="0x..."
+              spellcheck="false" /></label
+          ><label
+            >สิทธิ์<select id="sAllow">
+              <option value="1">ให้สิทธิ์</option>
+              <option value="0">ถอนสิทธิ์</option>
+            </select></label
+          >
+        </div>
+        <div><button class="btn" id="btnIssuer">บันทึกสิทธิ์</button></div>
+        <hr style="border: 0; border-top: 1px solid var(--line); width: 100%" />
+        <h2>เพิกถอนใบรับรอง</h2>
+        <div class="row">
+          <label>รหัสอ้างอิง<input id="rRef" /></label
+          ><label
+            >เหตุผล<input id="rReason" placeholder="ออกผิดพลาด / ทุจริต"
+          /></label>
+        </div>
+        <div><button class="btn danger" id="btnRevoke">เพิกถอน</button></div>
+        <p class="hint">การเพิกถอนไม่ลบข้อมูล ประวัติการออกยังอยู่บนเชน</p>
+      </section>
+    </div>
+    <div id="toast" role="status"></div>
+
+    <script>
+      const ABI = [
+        "function owner() view returns (address)",
+        "function isIssuer(address) view returns (bool)",
+        "function createCourse(string code,string name,string details)",
+        "function setIssuer(address issuer,bool allowed)",
+        "function issueCertificate(string refCode,string courseCode,address holder,bytes32 certHash)",
+        "function revokeCertificate(string refCode,string reason)",
+        "function getCertificate(string refCode) view returns (bool exists,bool valid,string courseCode,address holder,bytes32 certHash,uint64 issuedAt,uint64 revokedAt,string revokeReason)",
+        "function getHolderCertificates(address holder) view returns (string[])",
+        "function listCourses() view returns (string[])",
+      ];
+      // ===== ตั้งค่า: วางที่อยู่ CertificateRegistry ที่ Deploy ด้วย Remix บน Hoodi ตรงนี้ =====
+      const CONTRACT_ADDRESS = "0x425d42a497F68BccBBD488900C2487648F8DC0d3";
+      const CONFIGURED =
+        /^0x[0-9a-fA-F]{40}$/.test(CONTRACT_ADDRESS) &&
+        !/^0x0+$/.test(CONTRACT_ADDRESS);
+      const $ = (id) => document.getElementById(id);
+      let provider, signer, account;
+
+      function toast(m) {
+        const t = $("toast");
+        t.textContent = m;
+        t.style.display = "block";
+        clearTimeout(toast.h);
+        toast.h = setTimeout(() => (t.style.display = "none"), 3800);
+      }
+      function err(e) {
+        const m = e?.reason || e?.shortMessage || e?.message || String(e);
+        toast("ผิดพลาด: " + m.slice(0, 140));
+      }
+      function fmt(ts) {
+        return new Date(Number(ts) * 1000).toLocaleString("th-TH", {
+          dateStyle: "long",
+          timeStyle: "short",
+        });
+      }
+      function show(el, cls, html) {
+        el.className = "result show " + cls;
+        el.innerHTML = html;
+      }
+      function esc(s) {
+        return String(s).replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      }
+      async function busy(btn, fn) {
+        btn.disabled = true;
+        try {
+          await fn();
+        } catch (e) {
+          err(e);
+        } finally {
+          btn.disabled = false;
+        }
+      }
+
+      async function connect() {
+        if (!window.ethereum)
+          throw new Error("ไม่พบ Wallet (ติดตั้ง MetaMask ก่อน)");
+        provider = new ethers.BrowserProvider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        await ensureHoodi();
+        signer = await provider.getSigner();
+        account = await signer.getAddress();
+        $("acct").textContent = account.slice(0, 6) + "…" + account.slice(-4);
+        $("btnConnect").textContent = "เชื่อมต่อแล้ว";
+        if (window.ethereum.on && !connect.bound) {
+          connect.bound = 1;
+          ["chainChanged", "accountsChanged"].forEach((e) =>
+            window.ethereum.on(e, () => location.reload()),
+          );
+        }
+        await refreshChain();
+      }
+      async function ctr(write) {
+        if (!CONFIGURED)
+          throw new Error("ยังไม่ได้ตั้งค่า CONTRACT_ADDRESS ใน script");
+        if (!provider || (write && !signer)) await connect();
+        return new ethers.Contract(
+          CONTRACT_ADDRESS,
+          ABI,
+          write ? signer : provider,
+        );
+      }
+      $("btnConnect").onclick = () => busy($("btnConnect"), connect);
+
+      // แท็บ
+      document.querySelectorAll("#tabs button").forEach(
+        (b) =>
+          (b.onclick = () => {
+            document
+              .querySelectorAll("#tabs button")
+              .forEach((x) => x.setAttribute("aria-selected", x === b));
+            document
+              .querySelectorAll(".panel")
+              .forEach((p) =>
+                p.classList.toggle("on", p.id === "p-" + b.dataset.t),
+              );
+          }),
+      );
+
+      // ตรวจสอบ
+      async function doVerify() {
+        const ref = $("vRef").value.trim();
+        if (!ref) throw new Error("กรอกรหัสอ้างอิงใบรับรอง");
+        const c = await ctr(false);
+        const r = await c.getCertificate(ref);
+        const out = $("vResult");
+        if (!r.exists)
+          return show(
+            out,
+            "bad",
+            "<h3>ไม่พบใบรับรอง</h3>ไม่มีรหัสนี้ในระบบ อาจเป็นเอกสารปลอมหรือพิมพ์รหัสผิด",
+          );
+        let integ = "";
+        const pl = $("vPayload").value.trim();
+        let tamper = false;
+        if (pl) {
+          const ok = ethers.id(pl) === r.certHash;
+          tamper = !ok;
+          integ =
+            "<dt>ความถูกต้องของข้อมูล</dt><dd><b>" +
+            (ok ? "ตรงกับ Hash บนเชน" : "ไม่ตรง – ข้อมูลอาจถูกแก้ไข") +
+            "</b></dd>";
+        }
+        const rows =
+          "<dl><dt>หลักสูตร</dt><dd>" +
+          esc(r.courseCode) +
+          "</dd><dt>วันที่ออก</dt><dd>" +
+          fmt(r.issuedAt) +
+          "</dd><dt>Wallet ผู้รับ</dt><dd>" +
+          r.holder +
+          "</dd><dt>Hash</dt><dd>" +
+          r.certHash +
+          "</dd>" +
+          integ +
+          (r.revokedAt > 0n
+            ? "<dt>เพิกถอนเมื่อ</dt><dd>" +
+              fmt(r.revokedAt) +
+              "</dd><dt>เหตุผล</dt><dd>" +
+              esc(r.revokeReason || "-") +
+              "</dd>"
+            : "") +
+          "</dl>";
+        if (!r.valid)
+          show(
+            out,
+            "bad",
+            "<h3>ใบรับรองถูกเพิกถอนแล้ว</h3>เคยออกจริงแต่ไม่มีผลใช้งาน" + rows,
+          );
+        else if (tamper)
+          show(
+            out,
+            "warn",
+            "<h3>รหัสถูกต้อง แต่ข้อมูลไม่ตรงกับต้นฉบับ</h3>ห้ามเชื่อถือเอกสารฉบับนี้" +
+              rows,
+          );
+        else show(out, "ok", "<h3>ใบรับรองถูกต้องและมีผลใช้งาน</h3>" + rows);
+      }
+      $("btnVerify").onclick = () => busy($("btnVerify"), doVerify);
+
+      // ใบรับรองของฉัน
+      $("btnMine").onclick = () =>
+        busy($("btnMine"), async () => {
+          if (!account) await connect();
+          const c = await ctr(false),
+            list = $("mineList");
+          const refs = await c.getHolderCertificates(account);
+          if (!refs.length) {
+            list.innerHTML =
+              '<p class="hint">ยังไม่มีใบรับรองที่ผูกกับ Wallet นี้</p>';
+            return;
+          }
+          list.innerHTML = "";
+          for (const ref of refs) {
+            const r = await c.getCertificate(ref),
+              d = document.createElement("div");
+            d.className = "cert";
+            d.innerHTML =
+              "<div><b>" +
+              esc(ref) +
+              '</b><br><span class="hint">' +
+              esc(r.courseCode) +
+              " · ออกเมื่อ " +
+              fmt(r.issuedAt) +
+              '</span></div><span class="tag ' +
+              (r.valid ? "ok" : "bad") +
+              '">' +
+              (r.valid ? "มีผลใช้งาน" : "เพิกถอนแล้ว") +
+              "</span>";
+            list.appendChild(d);
+          }
+        });
+
+      // ออก
+      $("btnLoadCourses").onclick = () =>
+        busy($("btnLoadCourses"), async () => {
+          const c = await ctr(false),
+            l = await c.listCourses(),
+            s = $("iCourse");
+          s.innerHTML = l.length
+            ? l.map((x) => "<option>" + esc(x) + "</option>").join("")
+            : '<option value="">ยังไม่มีหลักสูตร</option>';
+        });
+      $("btnIssue").onclick = () =>
+        busy($("btnIssue"), async () => {
+          const ref = $("iRef").value.trim(),
+            course = $("iCourse").value,
+            name = $("iName").value.trim(),
+            holder = $("iHolder").value.trim();
+          if (!ref || !course || !name) throw new Error("กรอกข้อมูลให้ครบ");
+          if (!ethers.isAddress(holder))
+            throw new Error("Wallet ผู้รับไม่ถูกต้อง");
+          const c = await ctr(true);
+          const salt = ethers.hexlify(ethers.randomBytes(16));
+          const payload = JSON.stringify({
+            ref,
+            name,
+            course,
+            issuedOn: new Date().toISOString().slice(0, 10),
+            salt,
+          });
+          const tx = await c.issueCertificate(
+            ref,
+            course,
+            holder,
+            ethers.id(payload),
+          );
+          show(
+            $("iResult"),
+            "warn",
+            "<h3>กำลังบันทึกบน Blockchain…</h3>รอการยืนยันธุรกรรม",
+          );
+          await tx.wait();
+          show(
+            $("iResult"),
+            "ok",
+            "<h3>ออกใบรับรองสำเร็จ</h3>เก็บข้อมูลด้านล่างไว้ให้ผู้รับ ระบบไม่สามารถกู้คืนได้จากบนเชน",
+          );
+          $("iPayload").value = payload;
+          $("iOut").style.display = "grid";
+          const q = $("qr");
+          q.innerHTML = "";
+          const link = location.href.split("#")[0] + "#" + ref;
+          new QRCode(q, { text: link, width: 150, height: 150 });
+          $("qrNote").textContent = "สแกน QR เพื่อเปิดหน้าตรวจสอบรหัส " + ref;
+        });
+
+      // แอดมิน
+      $("btnCourse").onclick = () =>
+        busy($("btnCourse"), async () => {
+          const c = await ctr(true);
+          const tx = await c.createCourse(
+            $("cCode").value.trim(),
+            $("cName").value.trim(),
+            $("cDetails").value.trim(),
+          );
+          await tx.wait();
+          toast("สร้างหลักสูตรแล้ว");
+        });
+      $("btnIssuer").onclick = () =>
+        busy($("btnIssuer"), async () => {
+          const a = $("sAddr").value.trim();
+          if (!ethers.isAddress(a)) throw new Error("Wallet ไม่ถูกต้อง");
+          const c = await ctr(true);
+          await (await c.setIssuer(a, $("sAllow").value === "1")).wait();
+          toast("บันทึกสิทธิ์แล้ว");
+        });
+      $("btnRevoke").onclick = () =>
+        busy($("btnRevoke"), async () => {
+          const ref = $("rRef").value.trim();
+          if (!ref) throw new Error("กรอกรหัสอ้างอิง");
+          if (!confirm("ยืนยันเพิกถอนใบรับรอง " + ref + " ?")) return;
+          const c = await ctr(true);
+          await (
+            await c.revokeCertificate(ref, $("rReason").value.trim())
+          ).wait();
+          toast("เพิกถอนแล้ว");
+        });
+
+      // ===== เครือข่าย / บทบาท (Hoodi Testnet) =====
+      const HOODI = {
+        id: 560048,
+        hex: "0x88bb0",
+        name: "Hoodi Testnet",
+        explorer: "https://hoodi.etherscan.io",
+        rpc: "https://rpc.hoodi.ethpandaops.io",
+      };
+      async function ensureHoodi() {
+        const id = Number((await provider.getNetwork()).chainId);
+        if (id === HOODI.id) return;
+        try {
+          await window.ethereum.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: HOODI.hex }],
+          });
+        } catch (e) {
+          if (e.code === 4902 || e.code === -32603)
+            await window.ethereum.request({
+              method: "wallet_addEthereumChain",
+              params: [
+                {
+                  chainId: HOODI.hex,
+                  chainName: "Hoodi Testnet",
+                  nativeCurrency: {
+                    name: "Hoodi ETH",
+                    symbol: "ETH",
+                    decimals: 18,
+                  },
+                  rpcUrls: [HOODI.rpc],
+                  blockExplorerUrls: [HOODI.explorer],
+                },
+              ],
+            });
+          else throw e;
+        }
+        provider = new ethers.BrowserProvider(window.ethereum);
+        signer = await provider.getSigner();
+      }
+      async function refreshChain() {
+        const id = Number((await provider.getNetwork()).chainId),
+          c = $("chain");
+        c.textContent =
+          id === HOODI.id ? HOODI.name : "Chain " + id + " (ไม่ใช่ Hoodi)";
+        c.className = "chip " + (id === HOODI.id ? "on" : "off");
+        await refreshRole();
+      }
+      async function refreshRole() {
+        const r = $("role");
+        try {
+          const c = await ctr(false);
+          let t = "ผู้ใช้ทั่วไป";
+          if (
+            account &&
+            (await c.owner()).toLowerCase() === account.toLowerCase()
+          )
+            t = "ผู้ดูแลระบบ";
+          else if (account && (await c.isIssuer(account))) t = "ผู้ออกใบรับรอง";
+          r.textContent = t;
+          r.className = "chip on";
+          r.hidden = false;
+        } catch (e) {
+          r.hidden = true;
+        }
+      }
+      if (CONFIGURED)
+        $("addrHint").innerHTML =
+          'Contract บน Hoodi: <a href="' +
+          HOODI.explorer +
+          "/address/" +
+          CONTRACT_ADDRESS +
+          '" target="_blank" rel="noopener">' +
+          CONTRACT_ADDRESS.slice(0, 10) +
+          "…" +
+          CONTRACT_ADDRESS.slice(-6) +
+          "</a>";
+      else
+        $("addrHint").textContent =
+          "ยังไม่ได้ตั้งค่า CONTRACT_ADDRESS ในส่วน script";
+
+      // เปิดจากลิงก์ QR: #รหัสอ้างอิง
+      const h = location.hash.slice(1);
+      if (h) {
+        $("vRef").value = decodeURIComponent(h);
+        if (CONFIGURED && window.ethereum) doVerify().catch(err);
+      }
+    </script>
+  </body>
+</html>
